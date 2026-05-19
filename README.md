@@ -2,7 +2,7 @@
 
 Silero v5 voice-activity detection, running on the **VoxRT** custom on-device inference runtime.
 
-- Current version: `v0.1.0`
+- Current version: `v0.1.1`
 - Minimum Android: API 26 (Android 8.0)
 - ABIs shipped: `arm64-v8a` (NEON-accelerated), `x86_64` (scalar, emulator only)
 - License: Apache-2.0 (Kotlin wrapper) · proprietary (compiled runtime, redistribution allowed via this artifact)
@@ -52,7 +52,7 @@ Then in your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.VoxRT:voxrt-silero-android:v0.1.0")
+    implementation("com.github.VoxRT:voxrt-silero-android:v0.1.1")
 }
 ```
 
@@ -61,10 +61,10 @@ Gradle resolves it to a pre-built AAR served by JitPack from the tagged commit o
 ## Get the VAD model
 
 The model weights are NOT bundled — you fetch them once from
-[`voxrt-silero-models`](https://github.com/VoxRT/voxrt-silero-models/releases/tag/v0.1.0):
+[`voxrt-silero-models`](https://github.com/VoxRT/voxrt-silero-models/releases/tag/v0.1.1):
 
 ```
-https://github.com/VoxRT/voxrt-silero-models/releases/download/v0.1.0/silero_vad.vxrt
+https://github.com/VoxRT/voxrt-silero-models/releases/download/v0.1.1/silero_vad.vxrt
 ```
 
 SHA-256: `0fe8498c9bd1ae119bcb0c75c8481b3a8b8be0f95c14f334d469851c19054156`
@@ -111,7 +111,7 @@ The engine owns the LSTM state internally. Call `vad.reset()` between streams (e
 
 ## Architectures roadmap
 
-`v0.1.0` ships only `arm64-v8a` for production. The `x86_64` slice is included so the library works on Android emulators (using the scalar code path, not NEON-optimized).
+`v0.1.1` ships only `arm64-v8a` for production. The `x86_64` slice is included so the library works on Android emulators (using the scalar code path, not NEON-optimized).
 
 | ABI                       | Status     | Notes |
 | ------------------------- | ---------- | ----- |

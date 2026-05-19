@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.VoxRT"
-version = "0.1.0"
+version = "0.1.1"
 
 android {
     namespace = "com.voxrt.silero"
@@ -62,7 +62,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.VoxRT"
                 artifactId = "voxrt-silero"
-                version = "0.1.0"
+                version = "0.1.1"
             }
         }
     }
