@@ -149,9 +149,10 @@ The compiled `libvoxrt_silero.so` per ABI is checked in as the binary half of th
 
 ## License
 
-- The Kotlin wrapper (`voxrt-silero/src/main/java/com/voxrt/silero/`) is licensed under **Apache-2.0**.
-- The compiled `libvoxrt_silero.so` files are proprietary VoxRT runtime code, redistributed for use **with the unmodified VoxrtSilero Kotlin library**. See `LICENSE-BINARY` in this repo for the full terms.
+- The Kotlin wrapper (`voxrt-silero/src/main/java/com/voxrt/silero/`) is licensed under **Apache-2.0**. See [`LICENSE`](LICENSE).
+- The compiled `libvoxrt_silero.so` files are proprietary VoxRT runtime code owned by Elephant Enterprises LLC, redistributable as part of this unmodified Kotlin library. See [`LICENSE-BINARY`](LICENSE-BINARY) for the full terms.
 - Silero VAD model weights are © Silero Team, originally MIT-licensed; the `.vxrt` encoded form retains the same license. See the [models repository](https://github.com/VoxRT/voxrt-silero-models).
+- Commercial integration / custom-model packaging questions: help@voxrt.com.
 
 ## Links
 

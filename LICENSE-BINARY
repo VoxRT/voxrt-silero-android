@@ -1,0 +1,87 @@
+VoxRT Binary Use License
+
+Copyright (c) 2026 Elephant Enterprises LLC (d/b/a VoxRT).
+
+This license covers the compiled artifacts distributed with this
+Kotlin library:
+
+  voxrt-silero/src/main/jniLibs/arm64-v8a/libvoxrt_silero.so
+  voxrt-silero/src/main/jniLibs/x86_64/libvoxrt_silero.so
+
+These binaries are proprietary code owned by Elephant Enterprises LLC.
+By using them you agree to the following.
+
+1. PERMITTED USES
+
+   You may use, link against, and redistribute these binaries as an
+   unmodified part of the official voxrt-silero-android Kotlin
+   library at the version they were resolved from (the Git tag whose
+   commit produced the AAR your build is consuming, via JitPack or
+   any future Maven coordinate).
+
+   Redistribution in your own Android applications — including
+   commercial Play Store apps — is permitted without per-installation
+   fees, royalties, or registration, for the on-device speech-model
+   inference task the binaries are built for.
+
+   You may run the binaries on production user devices.
+
+2. RESTRICTIONS
+
+   You may not:
+
+   (a) Modify, repackage, or relink the binaries outside the
+       unmodified official voxrt-silero-android Kotlin library.
+
+   (b) Reverse engineer, decompile, disassemble, or otherwise attempt
+       to derive the source code, the embedded model weights, the
+       embedded master key, or other internal state of the binaries.
+
+   (c) Bypass, defeat, or remove any technical protection mechanism
+       used by the binaries, including (without limitation) the
+       AES-256-GCM weight encryption and the XOR-masked master key
+       described in the project's public design documents.
+
+   (d) Use the binaries to load or decrypt model files (`.vxrt` or
+       any other format) that were not published by Elephant
+       Enterprises LLC or that you are not authorized to use.
+
+3. SILERO WEIGHTS
+
+   The Silero VAD model weights packaged separately as
+   `silero_vad.vxrt` (distributed via the voxrt-silero-models
+   repository) are licensed under the MIT License — see that repo for
+   the upstream Silero Team notice and the VoxRT repackaging notice.
+   Section 2 above does not restrict the underlying Silero weights;
+   it restricts only the VoxRT runtime that consumes them.
+
+4. NO WARRANTY
+
+   THE BINARIES ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+   NONINFRINGEMENT. IN NO EVENT SHALL ELEPHANT ENTERPRISES LLC BE
+   LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM
+   YOUR USE OF THE BINARIES.
+
+5. COMMERCIAL INTEGRATION
+
+   For commercial integration support, custom model packaging on the
+   VoxRT runtime, or licensing terms beyond those described above,
+   contact help@voxrt.com.
+
+6. GOVERNING LAW
+
+   This License is governed by the laws of the State of Delaware,
+   United States of America, without regard to its conflict-of-laws
+   provisions.
+
+7. ENTIRE AGREEMENT
+
+   This License is the entire agreement between you and Elephant
+   Enterprises LLC concerning the binaries. It supersedes any prior
+   discussions or oral statements.
+
+Elephant Enterprises LLC may revise this License in future releases.
+Pin a specific version of voxrt-silero-android in your build.gradle.kts
+to keep the License terms you accepted stable across upgrades.
