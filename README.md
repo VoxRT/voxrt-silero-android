@@ -2,7 +2,7 @@
 
 Silero v5 voice-activity detection, running on the **VoxRT** custom on-device inference runtime.
 
-- Current version: `v0.1.1`
+- Current version: `v0.1.2`
 - Minimum Android: API 26 (Android 8.0)
 - ABIs shipped: `arm64-v8a` (NEON-accelerated), `x86_64` (scalar, emulator only)
 - License: Apache-2.0 (Kotlin wrapper) · proprietary (compiled runtime, redistribution allowed via this artifact)
@@ -52,7 +52,7 @@ Then in your app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.VoxRT:voxrt-silero-android:v0.1.1")
+    implementation("com.github.VoxRT:voxrt-silero-android:v0.1.2")
 }
 ```
 
@@ -61,32 +61,49 @@ Gradle resolves it to a pre-built AAR served by JitPack from the tagged commit o
 ## Get the VAD model
 
 The model weights are NOT bundled — you fetch them once from
-[`voxrt-silero-models`](https://github.com/VoxRT/voxrt-silero-models/releases/tag/v0.1.1):
+[`voxrt-silero-models`](https://github.com/VoxRT/voxrt-silero-models/releases/tag/v0.1.2):
 
 ```
-https://github.com/VoxRT/voxrt-silero-models/releases/download/v0.1.1/silero_vad.vxrt
+https://github.com/VoxRT/voxrt-silero-models/releases/download/v0.1.2/silero_vad.vxrt
 ```
 
 SHA-256: `0fe8498c9bd1ae119bcb0c75c8481b3a8b8be0f95c14f334d469851c19054156`
 
 You decide where it lives. Three common patterns:
 
-- **Bundle in `assets/`** — drop the file into `src/main/assets/`. Read with `context.assets.open("silero_vad.vxrt").readBytes()`. Works offline from first launch.
+- **Bundle in `assets/`** — drop the file into `src/main/assets/` and tell AAPT to leave the asset uncompressed so the engine can `mmap` it zero-copy via `AssetFileDescriptor` (see [Required: `noCompress`](#required-nocompress-on-vxrt-assets) below). Works offline from first launch.
 - **Download on first run** — `OkHttp` / `HttpURLConnection` into `context.filesDir`. Smaller APK; needs network at first launch.
 - **Download on demand** — Play Asset Delivery if you want Play Store to host the file.
+
+### Required: `noCompress` on `.vxrt` assets
+
+When you bundle `silero_vad.vxrt` under `assets/`, add the following to your **app**'s `build.gradle.kts` so AAPT leaves the asset stored-as-is and `openFd()` returns a real FD slice:
+
+```kotlin
+android {
+    androidResources {
+        noCompress.add("vxrt")
+    }
+}
+```
+
+Without this the asset is gzip'd inside the APK, `openFd()` falls back to a decompressed in-RAM `ByteArray`, and you lose the mmap zero-copy load (peak memory roughly doubles at session start). For 3 MB Silero this is harmless in absolute terms, but the same `noCompress` rule applies if you ever bundle the heavier ASR `.vxrt` in the same app — set it once and forget.
 
 ## Quick start
 
 ```kotlin
 import com.voxrt.silero.VoxrtSileroVadEngine
 
-// 1. Load the model bytes (however you obtained them).
-val modelBytes: ByteArray = context.assets.open("silero_vad.vxrt").use { it.readBytes() }
+// 1. Open the model as a file-descriptor — no managed-heap copy.
+val modelFd = context.assets.openFd("silero_vad.vxrt")
+val vad = VoxrtSileroVadEngine.fromAssetFd(modelFd)
+modelFd.close()  // native side has copied the bytes; FD can go.
 
-// 2. Spin up an engine. One per audio stream.
-val vad = VoxrtSileroVadEngine.fromVxrtBytes(modelBytes)
+// (Optional, equivalent for downloaded models)
+//    val modelBytes: ByteArray = downloadedFile.readBytes()
+//    val vad = VoxrtSileroVadEngine.fromVxrtBytes(modelBytes)
 
-// 3. Feed PCM (Int16, 16 kHz, mono).
+// 2. Feed PCM (Int16, 16 kHz, mono).
 val events = vad.processPcm(samples)
 
 for (event in events) {
@@ -102,16 +119,111 @@ vad.close()
 
 The engine owns the LSTM state internally. Call `vad.reset()` between streams (e.g. when re-arming the mic). State snapshotting for replay / fork is also supported — see `VoxrtSileroVadEngine.snapshotLstmState()`.
 
+## Live microphone example
+
+The engine is **synchronous and stateful** — no internal worker
+thread, no callbacks. You drive it from your own capture loop and
+get events back as the return value of `processPcm`.
+
+```kotlin
+import android.Manifest
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.MediaRecorder
+import com.voxrt.silero.VadEvent
+import com.voxrt.silero.VoxrtSileroVadEngine
+
+// Caller is responsible for requesting RECORD_AUDIO permission
+// before starting — see the manifest line below.
+
+val sampleRate = 16_000
+val minBuf = AudioRecord.getMinBufferSize(
+    sampleRate,
+    AudioFormat.CHANNEL_IN_MONO,
+    AudioFormat.ENCODING_PCM_16BIT,
+)
+val rec = AudioRecord(
+    MediaRecorder.AudioSource.VOICE_RECOGNITION,
+    sampleRate, AudioFormat.CHANNEL_IN_MONO,
+    AudioFormat.ENCODING_PCM_16BIT,
+    maxOf(minBuf, 4096),
+)
+
+val modelFd = context.assets.openFd("silero_vad.vxrt")
+val vad = VoxrtSileroVadEngine.fromAssetFd(modelFd)
+modelFd.close()
+
+Thread {
+    rec.startRecording()
+    // 32 ms blocks (512 samples @ 16 kHz) — one per inference window.
+    val buf = ShortArray(512)
+    try {
+        while (!stopped) {
+            val n = rec.read(buf, 0, buf.size, AudioRecord.READ_BLOCKING)
+            if (n <= 0) continue
+            val block = if (n < buf.size) buf.copyOf(n) else buf
+            for (event in vad.processPcm(block)) {
+                when (event.kind) {
+                    VadEvent.Kind.SPEECH_START ->
+                        runOnUiThread { Log.i("VAD", "speech started @ ${event.timestampMs} ms") }
+                    VadEvent.Kind.SPEECH_END   ->
+                        runOnUiThread { Log.i("VAD", "speech ended   @ ${event.timestampMs} ms") }
+                }
+            }
+        }
+    } finally {
+        rec.stop(); rec.release()
+        vad.close()
+    }
+}.start()
+```
+
+`vad.processPcm` returns immediately with whatever VAD events
+crossed the hysteresis thresholds during this chunk — often an
+empty list while inside a speech segment, an onset/offset event
+when the state machine transitions. UI marshalling is the
+caller's job (we don't assume anything about your UI framework).
+
+Required permission in your **app**'s `AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+```
+
+Request it at runtime before constructing `AudioRecord` on
+Android 6+.
+
 ## Audio contract
 
-- **Sample rate:** 16 000 Hz
-- **Sample format:** `ShortArray` PCM (Int16), mono, native endian
+- **Sample rate:** 16 000 Hz. **No automatic resampling.** If your source is 44.1 kHz / 48 kHz (typical for `AudioRecord`), resample first. Feeding the wrong rate is the #1 source of "VAD never fires" bugs.
+- **Sample format:** `ShortArray` PCM (Int16), mono, native endian.
 - **Buffer size:** any. The engine internally segments into 32 ms frames (512 samples) with a 4 ms (64-sample) rolling context.
 - **Latency:** one frame (32 ms) of inherent buffering. End-of-speech is reported with the configurable `minSilenceMs` (default 250 ms) hysteresis.
 
+## Threading
+
+- The engine is a **synchronous, stateful function**. It does NOT own a worker thread. Each `processPcm` call blocks on the calling thread for the duration of the inference work — for live mic, put the engine + capture loop on your own background thread (see the example above). Marshal events back to UI via `runOnUiThread` / `Handler` / a `MutableStateFlow`.
+- One engine instance is **single-thread-at-a-time**. Serialise `processPcm` / `reset` / `close` against each other on a given instance. The engine is annotated `@Synchronized` for basic safety, but concurrent calls don't make detection correct — only serial use does.
+- One engine instance handles a stream of audio. Between unrelated streams (e.g. re-arming the mic for a new session), call `engine.reset()` to zero the LSTM state without paying weight-load cost again. Call `engine.close()` (or use `.use { }`) when done with the instance.
+
+## Permissions
+
+The library declares **no permissions** in its manifest. Your app declares them as needed by your input pipeline:
+
+- Live mic capture → `RECORD_AUDIO` (runtime-requested on Android 6+).
+- Reading audio files from external storage → `READ_MEDIA_AUDIO` (Android 13+) or `READ_EXTERNAL_STORAGE` (lower).
+
+Add the line to your app's `AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+```
+
+And request it at runtime before constructing `AudioRecord` on Android 6+.
+
 ## Architectures roadmap
 
-`v0.1.1` ships only `arm64-v8a` for production. The `x86_64` slice is included so the library works on Android emulators (using the scalar code path, not NEON-optimized).
+`v0.1.2` ships only `arm64-v8a` for production. The `x86_64` slice is included so the library works on Android emulators (using the scalar code path, not NEON-optimized).
 
 | ABI                       | Status     | Notes |
 | ------------------------- | ---------- | ----- |

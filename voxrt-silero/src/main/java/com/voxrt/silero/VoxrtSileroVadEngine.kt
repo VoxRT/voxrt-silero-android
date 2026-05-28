@@ -185,6 +185,32 @@ class VoxrtSileroVadEngine private constructor(
             return VoxrtSileroVadEngine(h, config)
         }
 
+        /** mmap-based factory. Caller passes an `AssetFileDescriptor`
+         *  (typically `context.assets.openFd("silero_vad.vxrt")`);
+         *  the native side memory-maps the slice into the session
+         *  and the FD can be closed as soon as this returns.
+         *
+         *  Avoids the Java-heap doubling that [fromVxrtBytes] causes
+         *  for bundled assets. Requires
+         *  `androidResources { noCompress.add("vxrt") }` in the
+         *  consumer app's `build.gradle.kts`. */
+        @JvmOverloads
+        fun fromAssetFd(
+            assetFd: android.content.res.AssetFileDescriptor,
+            config: Config = Config(),
+        ): VoxrtSileroVadEngine {
+            val h = VoxrtNative.createFromFd(
+                assetFd.parcelFileDescriptor.fd,
+                assetFd.startOffset,
+                assetFd.length,
+            )
+            check(h != 0L) {
+                "VoxrtNative.createFromFd returned 0 — asset uncompressed? " +
+                        ".vxrt valid?"
+            }
+            return VoxrtSileroVadEngine(h, config)
+        }
+
         /** Backwards-compat overload for the previous constructor
          *  that took loose hysteresis parameters. New code should
          *  use the [Config] overload. */

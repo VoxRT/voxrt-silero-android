@@ -35,6 +35,19 @@ object VoxrtNative {
      *  Returns 0 on any error (bad bytes, bad shape, OOM). */
     external fun create(modelBytes: ByteArray): Long
 
+    /** mmap-based create. Caller passes the file-descriptor, offset
+     *  and length from an `AssetFileDescriptor` (typically obtained
+     *  via `context.assets.openFd("silero_vad.vxrt")`). The native
+     *  side memory-maps the slice into the session and closes the
+     *  mapping after the v1 deserializer copies the bytes — caller
+     *  can close the FD immediately after this returns.
+     *
+     *  Avoids the Java-heap doubling that the [create] path causes
+     *  for bundled assets. The asset MUST be stored uncompressed in
+     *  the APK (`androidResources { noCompress.add("vxrt") }`), or
+     *  `openFd` throws on the Kotlin side. Returns 0 on error. */
+    external fun createFromFd(fd: Int, offset: Long, length: Long): Long
+
     /** Run one inference on a 576-sample (= [VoxrtSileroVadEngine.INPUT_SAMPLES])
      *  i16 PCM window. `state` is a flat `FloatArray(256)` holding
      *  `h[0..128] | c[128..256]` (matches the C ABI's
