@@ -107,9 +107,9 @@ modelFd.close()  // native side has copied the bytes; FD can go.
 val events = vad.processPcm(samples)
 
 for (event in events) {
-    when (event.kind) {
-        VadEvent.Kind.SPEECH_START -> Log.i("VAD", "speech started at ${event.timestampMs} ms")
-        VadEvent.Kind.SPEECH_END   -> Log.i("VAD", "speech ended   at ${event.timestampMs} ms")
+    when (event) {
+        is VadEvent.SpeechOnset  -> Log.i("VAD", "speech started at ${event.timeMs} ms")
+        is VadEvent.SpeechOffset -> Log.i("VAD", "speech ended   at ${event.timeMs} ms")
     }
 }
 
@@ -163,11 +163,11 @@ Thread {
             if (n <= 0) continue
             val block = if (n < buf.size) buf.copyOf(n) else buf
             for (event in vad.processPcm(block)) {
-                when (event.kind) {
-                    VadEvent.Kind.SPEECH_START ->
-                        runOnUiThread { Log.i("VAD", "speech started @ ${event.timestampMs} ms") }
-                    VadEvent.Kind.SPEECH_END   ->
-                        runOnUiThread { Log.i("VAD", "speech ended   @ ${event.timestampMs} ms") }
+                when (event) {
+                    is VadEvent.SpeechOnset  ->
+                        runOnUiThread { Log.i("VAD", "speech started @ ${event.timeMs} ms") }
+                    is VadEvent.SpeechOffset ->
+                        runOnUiThread { Log.i("VAD", "speech ended   @ ${event.timeMs} ms") }
                 }
             }
         }
