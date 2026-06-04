@@ -15,7 +15,12 @@ VoxRT is a from-scratch inference runtime for on-device speech models. No ONNX R
 
 `VoxrtSilero` is the free, open-source showcase of that runtime: a Kotlin library that runs the Silero v5 VAD with state-of-the-art per-frame latency. The runtime is the product; Silero is the demo subject.
 
-Commercial wake-word / keyword-spotting / phrase-recognition models built on the same runtime live at [voxrt.com](https://voxrt.com).
+Siblings on the same runtime:
+
+- [`VoxrtAsr`](https://github.com/VoxRT/voxrt-asr-android) — streaming speech recognition (FastConformer 32M)
+- [`VoxrtWakeWord`](https://github.com/VoxRT/voxrt-wake-word-android) — always-on wake-phrase detection (~48 K params)
+
+Commercial custom-phrase wake-word / keyword-spotting / domain-specific ASR models built on the same runtime live at [voxrt.com](https://voxrt.com).
 
 ## Performance
 
@@ -271,4 +276,6 @@ The compiled `libvoxrt_silero.so` per ABI is checked in as the binary half of th
 - VoxRT runtime + commercial models: [voxrt.com](https://voxrt.com)
 - iOS counterpart: [voxrt-silero-ios](https://github.com/VoxRT/voxrt-silero-ios)
 - VAD model weights & versions: [voxrt-silero-models](https://github.com/VoxRT/voxrt-silero-models)
+- Streaming ASR (Android): [voxrt-asr-android](https://github.com/VoxRT/voxrt-asr-android) · [models](https://github.com/VoxRT/voxrt-asr-models)
+- Wake-word (Android): [voxrt-wake-word-android](https://github.com/VoxRT/voxrt-wake-word-android) · [models](https://github.com/VoxRT/voxrt-wake-word-models)
 - Bugs / questions: open an issue on this repo
