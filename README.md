@@ -41,7 +41,7 @@ VAD became a commodity by 2026 — the question is **who you can actually ship i
 | Underlying model | Silero v5 (MIT upstream) | proprietary | GMM (2010) | proprietary |
 | Model / binary footprint | 1.2 MB model (.vxrt) | not published | < 100 KB | 320–532 KB shared lib (runtime + model bundled) |
 | Mobile RTF disclosed | ✅ measured on cheap Android + iPhone | ❌ desktop Ryzen + Raspberry Pi Zero only | ❌ | ✅ vendor-measured on Android + iPhone |
-| License | Runtime MIT + model MIT | Commercial freemium (paid tier opaque) | BSD-3 | Apache-2.0 **with non-compete clause**: redistribution blocked if it could enable Agora competitors |
+| License | Apache-2.0 wrapper + proprietary runtime + MIT weights (Silero Team) | Commercial freemium (paid tier opaque) | BSD-3 | Apache-2.0 **with non-compete clause**: redistribution blocked if it could enable Agora competitors |
 | Ship in a paid app | ✅ no per-deployment terms | ⚠️ requires paid commercial tier | ✅ accuracy is the 2010 floor | ❌ license clause 1 forbids it |
 
 We don't innovate on the VAD model — Silero v5 is the upstream MIT architecture you'd already pick. What we add is a NEON-optimized Rust runtime, a stateless C ABI suitable for SDK packaging, and per-device measured RTF that other vendors don't publish.
